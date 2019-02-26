@@ -51,6 +51,14 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.2.2/vue.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.7/goldenlayout.js"></script>
+        <template id="template-A">
+                <h1>{{ title }}</h1>
+                <a href="https://www.golden-layout.com/" target="_blank">golden-layout.com</a><br>
+                <button @click="resetLayout()">Reset Layout</button>
+        </template>
+        <template id="template-B"><input v-model="somevalue" /></template>
+        <template id="template-C"><p>{{ somevalue }}<p></template>
+        <template id="template-D"><div v-for="windowVariable in windowVariables"><a href="#">{{windowVariable.Name}}:{{windowVariable.Value}}</a></div></template>
     </head>
     <body>
         <div id="wrapper">
@@ -66,18 +74,11 @@
                     <div><a href="#" onclick="ToggleItem('A');">Template A</a></div>
                     <div><a href="#" onclick="ToggleItem('B');">Template B</a></div>
                     <div><a href="#" onclick="ToggleItem('C');">Template C</a></div>
+                    <div><a href="#" onclick="ToggleItem('D');">Template D</a></div>
                 </div>
             </div>
             <div id="app"></div>
         </div>
-
-        <template id="template-A">
-                <h1>{{ title }}</h1>
-                <a href="https://www.golden-layout.com/" target="_blank">golden-layout.com</a><br>
-                <button @click="resetLayout()">Reset Layout</button>
-        </template>
-        <template id="template-B"><input v-model="somevalue" /></template>
-        <template id="template-C"><p>{{ somevalue }}<p></template>
 
         <script>
             contentItemMap = {};
@@ -102,19 +103,35 @@
             }
 
             const vueData = { 
-                    el:'#app',
-                    data: {
-                        title: 'Vue + Golden Layout',
-                        somevalue: 'Hello Vue :-)'
-                    },
-                    methods:{
-                        resetLayout(){ 
-                            window.localStorage.removeItem('savedState'); 
-                            window.location.reload(true);              
-                        }
+                el:'#app',
+                data: {
+                    title: 'Vue + Golden Layout',
+                    somevalue: 'Hello Vue :-)',
+                    windowVariables:[]
+                },
+                methods:{
+                    resetLayout(){ 
+                        window.localStorage.removeItem('savedState'); 
+                        window.location.reload(true);              
                     }
                 }
-            
+            }
+
+            function setPropertyGrid(obj)
+            {
+                for(var k in obj)
+                {
+                    var v = obj[k];
+                    var t = typeof v;
+                    //console.log(v);
+                    //if(!(v instanceof Vue) && !(v instanceof $))
+                    vueData.data.windowVariables.push({Name:k,Value:v})
+                }
+            }
+
+            setPropertyGrid(window.localStorage);
+
+
                 let config = {
                     settings: {
                         hasHeaders: true,
@@ -144,6 +161,12 @@
                                         isClosable: false,
                                         componentName: 'template',
                                         componentState: { templateId: 'C'}
+                                    }, {
+                                        title: 'Template D',
+                                        type: 'component',
+                                        isClosable: false,
+                                        componentName: 'template',
+                                        componentState: { templateId: 'D'}
                                     }
                                 ]
                             }]
