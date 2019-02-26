@@ -156,7 +156,6 @@
                 const layout = new GoldenLayout(config,   $(vueData.el));  
             
                 layout.registerComponent('template', function (container, state) {
-                    //id="${state.templateId}"
                     const html = `<div id="${state.templateId}">${$('#template-'+state.templateId).html()}</div>`;
                     container.getElement().html(html);	
 
