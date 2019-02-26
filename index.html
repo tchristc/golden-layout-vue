@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.7/css/goldenlayout-base.css" />
+        <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.7/css/goldenlayout-dark-theme.css" />
+        <style>
+            html { box-sizing: border-box; }
+            *,*:before,*:after { box-sizing: inherit; }
+            body { margin: 0; }
+
+            [id="app"] { 
+                width: 100vw;
+                height: 100vh;
+                color: gold;
+                font-family: sans-serif;
+            } 
+            [id="A"],[id="B"],[id="C"] { padding: 1rem; }
+            h1 { font-weight: 400;}
+            a  { color: orange; }
+            input { margin: 1rem;}
+
+
+            button { position: absolute; bottom: 1rem; right: 1rem; }
+
+            .menu-container{
+                margin: 0px;
+                width: 100%;
+                height: 20px;
+                background-color: #222;
+            }
+
+            .menu-container a{
+                color: white;
+            }
+
+            .dropdown-content {
+                display: none;
+                position: absolute;
+                color: white;
+                background-color: #333;
+                min-width: 160px;
+                box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+                z-index: 3;
+            }
+
+            #menuFile:hover + .dropdown-content.menu-file {display: block;}
+            .dropdown-content.menu-file:hover  {display: block;}
+            #menuView:hover + .dropdown-content.menu-view {display: block;}
+            .dropdown-content.menu-view:hover {display: block;}
+        </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.2.2/vue.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.7/goldenlayout.js"></script>
+    </head>
+    <body>
+        <div id="wrapper">
+            <div class="menu-container">
+                <a id="menuFile" href="#">File</a>
+                <div class="dropdown-content menu-file">
+                    <div><a href="#" >Open</a></div>
+                    <div><a href="#">Save</a></div>
+                    <div><a href="#">Exit</a></div>
+                </div>
+                <a id="menuView" href="#" >View</a>
+                <div class="dropdown-content menu-view">
+                    <div><a href="#" onclick="ToggleItem('A');">Template A</a></div>
+                    <div><a href="#" onclick="ToggleItem('B');">Template B</a></div>
+                    <div><a href="#" onclick="ToggleItem('C');">Template C</a></div>
+                </div>
+            </div>
+            <div id="app"></div>
+        </div>
+
+        <template id="template-A">
+                <h1>{{ title }}</h1>
+                <a href="https://www.golden-layout.com/" target="_blank">golden-layout.com</a><br>
+                <button @click="resetLayout()">Reset Layout</button>
+        </template>
+        <template id="template-B"><input v-model="somevalue" /></template>
+        <template id="template-C"><p>{{ somevalue }}<p></template>
+
+        <script>
+            contentItemMap = {};
+            window.localStorage.removeItem('savedState'); 
+
+            function ToggleItem(id){
+                var items = layout.root.getItemsByFilter(function(ci){
+                    return ci.config.componentState && ci.config.componentState.templateId === id;
+                });
+
+                if(items.length !== 0) 
+                    items[0].remove();
+                else
+                {
+                    var item = contentItemMap.get(id);
+                    var stacks = layout.root.getItemsByType('stack');
+                    if(stacks.length !== 0) {
+                        stacks[0].addChild(item);
+                    }
+                }
+                    
+            }
+
+            const vueData = { 
+                    el:'#app',
+                    data: {
+                        title: 'Vue + Golden Layout',
+                        somevalue: 'Hello Vue :-)'
+                    },
+                    methods:{
+                        resetLayout(){ 
+                            window.localStorage.removeItem('savedState'); 
+                            window.location.reload(true);              
+                        }
+                    }
+                }
+            
+                let config = {
+                    settings: {
+                        hasHeaders: true,
+                        showPopoutIcon: false,
+                        showCloseIcon: false        
+                    },
+                    content:[{
+                        type: 'column',
+                        content: [
+                            { 
+                            title: 'Template A', 
+                            type: 'component', 
+                            isClosable: false,
+                            componentName: 'template', 
+                            componentState: { templateId: 'A' }
+                            }, {
+                                type: 'row',
+                                content:[ 
+                                    { title: 'Template B',
+                                    type: 'component',
+                                    isClosable: false,
+                                    componentName: 'template',
+                                    componentState: { templateId: 'B' }
+                                    }, {
+                                        title: 'Template C',
+                                        type: 'component',
+                                        isClosable: false,
+                                        componentName: 'template',
+                                        componentState: { templateId: 'C'}
+                                    }
+                                ]
+                            }]
+                    }]
+                } 
+            
+                const savedState = window.localStorage.getItem( 'savedState' );
+                config = savedState !== null ? JSON.parse( savedState ) : config;
+
+                const layout = new GoldenLayout(config,   $(vueData.el));  
+            
+                layout.registerComponent('template', function (container, state) {
+                    //id="${state.templateId}"
+                    const html = `<div id="${state.templateId}">${$('#template-'+state.templateId).html()}</div>`;
+                    container.getElement().html(html);	
+
+                    setTimeout(() => {  
+                        let options = {
+                            el: `#${state.templateId}`,
+                            data: vueData.data,   
+                            methods: vueData.methods
+                        }
+                        new Vue(options); 
+                    }); 
+                });
+                
+                layout.on( 'stateChanged', () => {
+                    const state = JSON.stringify( layout.toConfig() );
+                    window.localStorage.setItem( 'savedState', state );
+                });
+
+                layout.on('initialised', ()=>{
+                    var items = layout.root.getItemsByFilter(function(ci){
+                        return ci.config !== undefined && ci.config.componentState !== undefined;
+                    });
+                    contentItemMap = new Map(items.map(i => [i.config.componentState.templateId, i]));
+                    for(var [key, value] of contentItemMap.entries())
+                    {
+                        console.log(key + ' = ' + value);
+                    }
+                });
+
+                layout.init();
+                window.addEventListener('resize', () => { layout.updateSize(); });
+            </script>
+    </body>
+</html>
